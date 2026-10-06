@@ -1,17 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Shuffle, Pin, RotateCcw, Sparkles, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shuffle, Pin, RotateCcw, Sparkles, Users, FileSpreadsheet } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SeatStudent } from '@/types';
 
 interface SeatingSectionProps {
-  initialStudents: SeatStudent[];
+  students: SeatStudent[];
+  onOpenStudentManager: () => void;
 }
 
-export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents }) => {
-  const [students, setStudents] = useState<SeatStudent[]>(initialStudents);
+export const SeatingSection: React.FC<SeatingSectionProps> = ({
+  students: parentStudents,
+  onOpenStudentManager,
+}) => {
+  const [students, setStudents] = useState<SeatStudent[]>(parentStudents);
   const [isShuffling, setIsShuffling] = useState(false);
+
+  // Sync when parent student list changes (e.g. from Excel import)
+  useEffect(() => {
+    setStudents(parentStudents);
+  }, [parentStudents]);
 
   // Toggle fixed seat for a student
   const toggleFixedSeat = (id: number) => {
@@ -66,8 +75,11 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
   };
 
   const handleReset = () => {
-    setStudents(initialStudents);
+    setStudents(parentStudents);
   };
+
+  const maleCount = students.filter((s) => s.gender === 'M').length;
+  const femaleCount = students.filter((s) => s.gender === 'F').length;
 
   return (
     <div className="clay-card bg-white/90 dark:bg-slate-900/90 p-5 md:p-6 transition-all duration-300">
@@ -81,7 +93,7 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               스마트 자리바꾸기 추첨기
               <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-normal">
-                30인 학급 맞춤
+                {students.length}인 학급 맞춤
               </span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -91,7 +103,17 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Excel Roster Button */}
+          <button
+            onClick={onOpenStudentManager}
+            title="학생 명단 편집 및 엑셀 일괄 등록"
+            className="px-3 py-2 rounded-2xl clay-button bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-semibold text-xs md:text-sm flex items-center gap-1.5 shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span>학생 명단 관리 (엑셀)</span>
+          </button>
+
           <button
             onClick={handleReset}
             title="초기 자리로 리셋"
@@ -99,6 +121,7 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+
           <button
             onClick={handleShuffle}
             disabled={isShuffling}
@@ -120,7 +143,7 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
         </div>
       </div>
 
-      {/* Seating Grid (5 Columns x 6 Rows) */}
+      {/* Seating Grid (5 Columns default, responsive) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-2.5 md:gap-3">
         {students.map((student, idx) => {
           const seatNumber = idx + 1;
@@ -185,7 +208,9 @@ export const SeatingSection: React.FC<SeatingSectionProps> = ({ initialStudents 
 
       <div className="mt-4 flex flex-wrap items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800/60">
         <div>💡 핀(Pin) 아이콘을 클릭하여 시력 배려석 및 특별 배려석을 고정할 수 있습니다.</div>
-        <div className="font-medium">총 인원: 30명 (남 15명 / 여 15명)</div>
+        <div className="font-medium">
+          총 인원: {students.length}명 (남 {maleCount}명 / 여 {femaleCount}명)
+        </div>
       </div>
     </div>
   );

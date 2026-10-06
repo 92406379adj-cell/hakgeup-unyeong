@@ -2,16 +2,17 @@
 
 import React, { useState } from 'react';
 import { Trophy, Medal, Award, Plus, Flame, Sparkles, X } from 'lucide-react';
-import { ScoreItem } from '@/types';
+import { ScoreItem, SeatStudent } from '@/types';
 import { Modal } from '@/components/Modal';
-
 
 interface RankingSectionProps {
   scores: ScoreItem[];
   onAddScore: (item: Omit<ScoreItem, 'id' | 'played_at'>) => void;
+  students?: SeatStudent[];
 }
 
-export const RankingSection: React.FC<RankingSectionProps> = ({ scores, onAddScore }) => {
+export const RankingSection: React.FC<RankingSectionProps> = ({ scores, onAddScore, students = [] }) => {
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nickname, setNickname] = useState('');
   const [scoreToAdd, setScoreToAdd] = useState(10);
@@ -189,11 +190,20 @@ export const RankingSection: React.FC<RankingSectionProps> = ({ scores, onAddSco
             <input
               type="text"
               required
+              list="student-roster-list"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="예: 김민서, 1모둠"
+              placeholder="예: 강민서 (직접 입력 또는 명단 선택)"
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
             />
+            {students.length > 0 && (
+              <datalist id="student-roster-list">
+                {students.map((st) => (
+                  <option key={st.id} value={st.name} />
+                ))}
+              </datalist>
+            )}
+
           </div>
 
           <div>

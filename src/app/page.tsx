@@ -6,6 +6,7 @@ import { TimetableSection } from '@/components/TimetableSection';
 import { SeatingSection } from '@/components/SeatingSection';
 import { NoticeSection } from '@/components/NoticeSection';
 import { RankingSection } from '@/components/RankingSection';
+import { StudentManagerModal } from '@/components/StudentManagerModal';
 import {
   INITIAL_TIMETABLE,
   INITIAL_CHANGES,
@@ -14,18 +15,21 @@ import {
   INITIAL_STUDENTS,
   DEFAULT_CLASS_SETTINGS,
 } from '@/lib/initialData';
-import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings } from '@/types';
+import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings, SeatStudent } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ShieldCheck, Zap, Database, Server, ExternalLink } from 'lucide-react';
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [classSettings, setClassSettings] = useState<ClassSettings>(DEFAULT_CLASS_SETTINGS);
+  const [students, setStudents] = useState<SeatStudent[]>(INITIAL_STUDENTS);
+  const [isStudentManagerOpen, setIsStudentManagerOpen] = useState(false);
   const [timetable, setTimetable] = useState<TimetableItem[]>(INITIAL_TIMETABLE);
   const [changes, setChanges] = useState<TimetableChange[]>(INITIAL_CHANGES);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [scores, setScores] = useState<ScoreItem[]>(INITIAL_SCORES);
   const [dbStatus, setDbStatus] = useState<'connected' | 'offline_fallback'>('offline_fallback');
+
 
 
   // Initialize theme and classSettings from localStorage
@@ -41,12 +45,25 @@ export default function Home() {
         setClassSettings(JSON.parse(savedSettings));
       } catch (e) {}
     }
+
+    const savedStudents = localStorage.getItem('class_students');
+    if (savedStudents) {
+      try {
+        setStudents(JSON.parse(savedStudents));
+      } catch (e) {}
+    }
   }, []);
 
   const handleUpdateClassSettings = (newSettings: ClassSettings) => {
     setClassSettings(newSettings);
     localStorage.setItem('class_settings', JSON.stringify(newSettings));
   };
+
+  const handleSaveStudents = (newStudents: SeatStudent[]) => {
+    setStudents(newStudents);
+    localStorage.setItem('class_students', JSON.stringify(newStudents));
+  };
+
 
 
   // Sync dark mode class on html
@@ -223,13 +240,21 @@ export default function Home() {
 
         {/* Bento Cell 2: Points & Praise Ranking (4-col) */}
         <div className="lg:col-span-4">
-          <RankingSection scores={scores} onAddScore={handleAddScore} />
+          <RankingSection
+            scores={scores}
+            onAddScore={handleAddScore}
+            students={students}
+          />
         </div>
 
         {/* Bento Cell 3: Smart Seating Arrangement (7-col) */}
         <div className="lg:col-span-7">
-          <SeatingSection initialStudents={INITIAL_STUDENTS} />
+          <SeatingSection
+            students={students}
+            onOpenStudentManager={() => setIsStudentManagerOpen(true)}
+          />
         </div>
+
 
         {/* Bento Cell 4: Notices & Board (5-col) */}
         <div className="lg:col-span-5">
@@ -286,6 +311,15 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Student Roster Manager Modal via Portal */}
+      <StudentManagerModal
+        isOpen={isStudentManagerOpen}
+        onClose={() => setIsStudentManagerOpen(false)}
+        students={students}
+        onSaveStudents={handleSaveStudents}
+      />
     </main>
   );
 }
+
