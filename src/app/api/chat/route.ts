@@ -1,0 +1,147 @@
+import { NextResponse } from 'next/server';
+
+export const runtime = 'nodejs';
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { message, history = [], posts = [], timetable = [], classSettings } = body;
+
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json({ error: '질문 메시지를 입력해주세요.' }, { status: 400 });
+    }
+
+    const apiKey =
+      process.env.OPENAI_API_KEY ||
+      process.env.CHATGPT_APIKEY ||
+      process.env.GPT_API_KEY;
+
+    // 1. Build context from current posts and timetable
+    const grade = classSettings?.grade || 3;
+    const classNum = classSettings?.classNum || 7;
+
+    const postsContext = posts.length > 0
+      ? posts
+          .map(
+            (p: any, i: number) =>
+              `[공지 ${i + 1}] 분류: ${p.category || '일반'}, 제목: ${p.title}, 작성자: ${p.author}, 등록일시: ${p.created_at}\n내용: ${p.content}`
+          )
+          .join('\n\n')
+      : '현재 등록된 공지사항이 없습니다.';
+
+    const systemPrompt = `당신은 ${grade}학년 ${classNum}반의 친절하고 똑똑한 '학급 AI 알리미'입니다.
+학생들이 학급 공지사항, 학사일정, 수행평가 과제/마감일, 축제 및 학급 행사, 시간표 등에 대해 질문하면 아래에 제공된 [우리 반 실시간 공지사항 및 학급 데이터]를 바탕으로 정확하고 친절하게 답변해주세요.
+
+[답변 원칙]
+1. 학생들에게 친절하고 따뜻한 어조(존댓말)와 귀여운 이모지를 적절히 사용하여 답변해주세요.
+2. 공지사항에 적힌 날짜, 마감 시간, 준비물, 유의사항 등의 핵심 정보를 명확히 강조해주세요.
+3. 만약 공지사항이나 학급 데이터에 없는 내용이라면 거짓으로 지어내지 말고, "현재 등록된 학급 공지사항에는 해당 내용이 없습니다. 담임선생님이나 반장에게 확인해 주세요!"라고 정직하게 안내해주세요.
+4. 답변은 간결하고 가독성 좋게 글머리 기호(불릿 포인트) 등을 활용해 작성해주세요.
+
+[우리 반 실시간 공지사항 목록]
+${postsContext}
+
+[학급 기본 정보]
+- 학년/반: ${grade}학년 ${classNum}반
+- 담임교사: ${classSettings?.teacherName || '담임선생님'}
+`;
+
+    // 2. If OpenAI API Key is present, call OpenAI API
+    if (apiKey && apiKey.startsWith('sk-')) {
+      try {
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...history.slice(-6).map((h: any) => ({
+            role: h.role === 'assistant' ? 'assistant' : 'user',
+            content: h.content,
+          })),
+          { role: 'user', content: message },
+        ];
+
+        const openAiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages,
+            temperature: 0.5,
+            max_tokens: 600,
+          }),
+        });
+
+        if (openAiRes.ok) {
+          const data = await openAiRes.json();
+          const reply = data.choices?.[0]?.message?.content;
+          if (reply) {
+            return NextResponse.json({ reply, source: 'openai' });
+          }
+        } else {
+          const errBody = await openAiRes.text();
+          console.warn('OpenAI API returned non-200:', errBody);
+        }
+      } catch (err: any) {
+        console.warn('OpenAI fetch error, falling back:', err.message);
+      }
+    }
+
+    // 3. Fallback Response Generator based on keyword matching
+    let matchedPost = null;
+    const lowerQ = message.toLowerCase();
+
+    for (const post of posts) {
+      const titleLower = (post.title || '').toLowerCase();
+      const contentLower = (post.content || '').toLowerCase();
+      const catLower = (post.category || '').toLowerCase();
+
+      if (
+        (lowerQ.includes('중간고사') || lowerQ.includes('시험')) &&
+        (titleLower.includes('시험') || contentLower.includes('시험') || titleLower.includes('중간고사'))
+      ) {
+        matchedPost = post;
+        break;
+      }
+      if (
+        (lowerQ.includes('과학') || lowerQ.includes('보고서') || lowerQ.includes('수행평가')) &&
+        (titleLower.includes('과학') || contentLower.includes('보고서'))
+      ) {
+        matchedPost = post;
+        break;
+      }
+      if (
+        (lowerQ.includes('부스') || lowerQ.includes('축제') || lowerQ.includes('투표')) &&
+        (titleLower.includes('부스') || contentLower.includes('투표'))
+      ) {
+        matchedPost = post;
+        break;
+      }
+      if (
+        (lowerQ.includes('청소') || lowerQ.includes('분리수거')) &&
+        (titleLower.includes('청소') || contentLower.includes('청소'))
+      ) {
+        matchedPost = post;
+        break;
+      }
+    }
+
+    if (matchedPost) {
+      return NextResponse.json({
+        reply: `📢 **[${matchedPost.title}]** 관련 안내입니다!\n\n${matchedPost.content}\n\n• 작성자: ${matchedPost.author}\n• 등록일시: ${matchedPost.created_at}\n\n더 궁금한 점이 있으면 언제든 물어보세요! 😊`,
+        source: 'local_search',
+      });
+    }
+
+    return NextResponse.json({
+      reply: `안녕하세요! ${grade}학년 ${classNum}반 학급 AI 알리미입니다. 🤖\n\n질문해주신 **"${message}"**에 대한 내용은 현재 등록된 공지사항에서 직접 확인되지 않았습니다.\n\n중간고사 일정, 수행평가 마감, 축제 부스 투표 등 게시판에 올라온 내용에 대해 물어보시면 자세히 답변해 드릴 수 있어요!\n상세한 사항은 담임선생님(${classSettings?.teacherName || '선생님'}) 또는 반장에게 문의해 주세요. ✨`,
+      source: 'local_search',
+    });
+  } catch (error: any) {
+    console.error('Chat API Error:', error);
+    return NextResponse.json(
+      { error: '답변을 생성하는 도중 오류가 발생했습니다: ' + error.message },
+      { status: 500 }
+    );
+  }
+}

@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Megaphone, Heart, Plus, Clock, User, Check, Tag, X } from 'lucide-react';
+import { Megaphone, Heart, Plus, Clock, User, Check, Tag, X, Bot, Sparkles } from 'lucide-react';
 import { Post } from '@/types';
 import { Modal } from '@/components/Modal';
-
 
 interface NoticeSectionProps {
   posts: Post[];
   onAddPost: (post: Omit<Post, 'id' | 'likes' | 'created_at'>) => void;
   onLikePost: (id: string | number) => void;
+  onOpenChatBot?: () => void;
 }
+
 
 const CATEGORIES: ('전체' | '학사일정' | '수행평가' | '학급행사')[] = [
   '전체',
@@ -19,7 +20,13 @@ const CATEGORIES: ('전체' | '학사일정' | '수행평가' | '학급행사')[
   '학급행사',
 ];
 
-export const NoticeSection: React.FC<NoticeSectionProps> = ({ posts, onAddPost, onLikePost }) => {
+export const NoticeSection: React.FC<NoticeSectionProps> = ({
+  posts,
+  onAddPost,
+  onLikePost,
+  onOpenChatBot,
+}) => {
+
   const [selectedCat, setSelectedCat] = useState<'전체' | '학사일정' | '수행평가' | '학급행사'>('전체');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -71,13 +78,46 @@ export const NoticeSection: React.FC<NoticeSectionProps> = ({ posts, onAddPost, 
           </div>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-3.5 py-2 rounded-2xl clay-button bg-gradient-to-r from-amber-500 to-rose-500 text-white font-medium text-xs md:text-sm flex items-center gap-1.5 shadow-md shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" /> 공지 등록
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenChatBot && (
+            <button
+              onClick={onOpenChatBot}
+              title="공지사항에 대해 AI에게 실시간으로 질문하기"
+              className="px-3.5 py-2 rounded-2xl clay-button bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-xs md:text-sm flex items-center gap-1.5 shadow-md shadow-indigo-500/20 hover:scale-[1.03] active:scale-[0.98]"
+            >
+              <Bot className="w-4 h-4 animate-bounce" />
+              <span>AI 알리미 질문</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3.5 py-2 rounded-2xl clay-button bg-gradient-to-r from-amber-500 to-rose-500 text-white font-medium text-xs md:text-sm flex items-center gap-1.5 shadow-md shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" /> 공지 등록
+          </button>
+        </div>
       </div>
+
+      {/* AI Help Banner */}
+      {onOpenChatBot && (
+        <div
+          onClick={onOpenChatBot}
+          className="mb-4 p-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-indigo-50/90 to-purple-50/90 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-200/80 dark:border-indigo-800/60 cursor-pointer hover:shadow-sm transition-all flex items-center justify-between gap-2"
+        >
+          <div className="flex items-center gap-2 text-xs text-indigo-900 dark:text-indigo-200">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span className="font-semibold">시험 일정이나 수행평가 마감이 궁금한가요?</span>
+            <span className="hidden sm:inline text-slate-500 dark:text-slate-400 text-[11px]">
+              AI가 공지사항을 분석해 즉시 알려드려요!
+            </span>
+          </div>
+          <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 shrink-0 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-700">
+            질문하기 ➜
+          </span>
+        </div>
+      )}
+
 
       {/* Category Pills */}
       <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">

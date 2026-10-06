@@ -7,6 +7,7 @@ import { SeatingSection } from '@/components/SeatingSection';
 import { NoticeSection } from '@/components/NoticeSection';
 import { RankingSection } from '@/components/RankingSection';
 import { StudentManagerModal } from '@/components/StudentManagerModal';
+import { ClassAIChatModal } from '@/components/ClassAIChatModal';
 import {
   INITIAL_TIMETABLE,
   INITIAL_CHANGES,
@@ -17,14 +18,16 @@ import {
 } from '@/lib/initialData';
 import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings, SeatStudent } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { ShieldCheck, Zap, Database, Server, ExternalLink } from 'lucide-react';
+import { ShieldCheck, Zap, Database, Server, ExternalLink, Bot } from 'lucide-react';
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [classSettings, setClassSettings] = useState<ClassSettings>(DEFAULT_CLASS_SETTINGS);
   const [students, setStudents] = useState<SeatStudent[]>(INITIAL_STUDENTS);
   const [isStudentManagerOpen, setIsStudentManagerOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [timetable, setTimetable] = useState<TimetableItem[]>(INITIAL_TIMETABLE);
+
   const [changes, setChanges] = useState<TimetableChange[]>(INITIAL_CHANGES);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [scores, setScores] = useState<ScoreItem[]>(INITIAL_SCORES);
@@ -262,6 +265,7 @@ export default function Home() {
             posts={posts}
             onAddPost={handleAddPost}
             onLikePost={handleLikePost}
+            onOpenChatBot={() => setIsChatOpen(true)}
           />
         </div>
       </div>
@@ -312,6 +316,18 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Floating AI Chatbot Action Button */}
+      <button
+        onClick={() => setIsChatOpen(true)}
+        title="학급 공지사항 AI 알리미에게 질문하기"
+        className="fixed bottom-6 right-6 z-40 px-4 py-3 rounded-full clay-button bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white shadow-2xl shadow-purple-500/40 flex items-center gap-2.5 hover:scale-105 active:scale-95 transition-all group border border-white/20"
+      >
+        <Bot className="w-5 h-5 animate-bounce" />
+        <span className="text-xs font-extrabold tracking-wide">
+          AI 알리미 질문
+        </span>
+      </button>
+
       {/* Student Roster Manager Modal via Portal */}
       <StudentManagerModal
         isOpen={isStudentManagerOpen}
@@ -319,7 +335,17 @@ export default function Home() {
         students={students}
         onSaveStudents={handleSaveStudents}
       />
+
+      {/* Class AI Chatbot Modal via Portal */}
+      <ClassAIChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        posts={posts}
+        timetable={timetable}
+        classSettings={classSettings}
+      />
     </main>
   );
 }
+
 
