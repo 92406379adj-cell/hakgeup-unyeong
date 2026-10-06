@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #f0f4f9;
+  --text-main: #1e293b;
+  --clay-shadow-light: 8px 8px 16px rgba(166, 180, 200, 0.45), -8px -8px 16px rgba(255, 255, 255, 0.9), inset 0 2px 3px rgba(255, 255, 255, 0.7);
+  --clay-btn-shadow: 4px 4px 10px rgba(166, 180, 200, 0.5), -4px -4px 10px rgba(255, 255, 255, 0.9), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  --clay-pressed: inset 4px 4px 8px rgba(166, 180, 200, 0.5), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+}
+
+.dark {
+  --bg-main: #0c1222;
+  --text-main: #f1f5f9;
+  --clay-shadow-light: 8px 8px 18px rgba(0, 0, 0, 0.6), -4px -4px 14px rgba(255, 255, 255, 0.04), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+  --clay-btn-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5), -3px -3px 8px rgba(255, 255, 255, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  --clay-pressed: inset 3px 3px 6px rgba(0, 0, 0, 0.7), inset -2px -2px 4px rgba(255, 255, 255, 0.04);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Claymorphism Custom Classes */
+.clay-card {
+  box-shadow: var(--clay-shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 1.75rem;
+}
+
+.dark .clay-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.clay-button {
+  box-shadow: var(--clay-btn-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .clay-button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clay-button:active {
+  box-shadow: var(--clay-pressed);
+  transform: translateY(1px) scale(0.98);
+}
+
+.clay-inset {
+  box-shadow: var(--clay-pressed);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
