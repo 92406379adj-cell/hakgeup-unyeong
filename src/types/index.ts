@@ -43,3 +43,11 @@ export interface SeatStudent {
   gender: 'M' | 'F';
   isFixed?: boolean;
 }
+
+export interface ClassSettings {
+  grade: number;
+  classNum: number;
+  title: string;
+  teacherName?: string;
+}
+

@@ -12,26 +12,42 @@ import {
   INITIAL_POSTS,
   INITIAL_SCORES,
   INITIAL_STUDENTS,
+  DEFAULT_CLASS_SETTINGS,
 } from '@/lib/initialData';
-import { TimetableItem, TimetableChange, Post, ScoreItem } from '@/types';
+import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ShieldCheck, Zap, Database, Server, ExternalLink } from 'lucide-react';
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
+  const [classSettings, setClassSettings] = useState<ClassSettings>(DEFAULT_CLASS_SETTINGS);
   const [timetable, setTimetable] = useState<TimetableItem[]>(INITIAL_TIMETABLE);
   const [changes, setChanges] = useState<TimetableChange[]>(INITIAL_CHANGES);
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [scores, setScores] = useState<ScoreItem[]>(INITIAL_SCORES);
   const [dbStatus, setDbStatus] = useState<'connected' | 'offline_fallback'>('offline_fallback');
 
-  // Initialize theme from system or localStorage
+
+  // Initialize theme and classSettings from localStorage
   useEffect(() => {
     const isDark =
       localStorage.getItem('theme') === 'dark' ||
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     setDarkMode(isDark);
+
+    const savedSettings = localStorage.getItem('class_settings');
+    if (savedSettings) {
+      try {
+        setClassSettings(JSON.parse(savedSettings));
+      } catch (e) {}
+    }
   }, []);
+
+  const handleUpdateClassSettings = (newSettings: ClassSettings) => {
+    setClassSettings(newSettings);
+    localStorage.setItem('class_settings', JSON.stringify(newSettings));
+  };
+
 
   // Sync dark mode class on html
   useEffect(() => {
@@ -184,7 +200,12 @@ export default function Home() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Header with claymorphism & dark mode switch */}
-      <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Header
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        classSettings={classSettings}
+        onUpdateClassSettings={handleUpdateClassSettings}
+      />
 
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
@@ -195,8 +216,10 @@ export default function Home() {
             changes={changes}
             onAddChange={handleAddChange}
             onRemoveChange={handleRemoveChange}
+            classSettings={classSettings}
           />
         </div>
+
 
         {/* Bento Cell 2: Points & Praise Ranking (4-col) */}
         <div className="lg:col-span-4">

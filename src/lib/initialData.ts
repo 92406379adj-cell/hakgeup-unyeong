@@ -1,31 +1,32 @@
-import { TimetableItem, TimetableChange, Post, ScoreItem, SeatStudent } from '@/types';
+import { TimetableItem, TimetableChange, Post, ScoreItem, SeatStudent, ClassSettings } from '@/types';
+
 
 export const INITIAL_TIMETABLE: TimetableItem[] = [
   {
     period: 1,
     time: '09:00 - 09:50',
-    monday: { subject: '국어', teacher: '김민준', room: '3-2' },
-    tuesday: { subject: '수학 I', teacher: '이도현', room: '3-2' },
-    wednesday: { subject: '영어', teacher: '박소율', room: '3-2' },
-    thursday: { subject: '한국사', teacher: '최지훈', room: '3-2' },
+    monday: { subject: '국어', teacher: '김민준', room: '3-7' },
+    tuesday: { subject: '수학 I', teacher: '이도현', room: '3-7' },
+    wednesday: { subject: '영어', teacher: '박소율', room: '3-7' },
+    thursday: { subject: '한국사', teacher: '최지훈', room: '3-7' },
     friday: { subject: '화학 I', teacher: '정다은', room: '과학실 2' },
   },
   {
     period: 2,
     time: '10:00 - 10:50',
-    monday: { subject: '수학 I', teacher: '이도현', room: '3-2' },
-    tuesday: { subject: '영어', teacher: '박소율', room: '3-2' },
+    monday: { subject: '수학 I', teacher: '이도현', room: '3-7' },
+    tuesday: { subject: '영어', teacher: '박소율', room: '3-7' },
     wednesday: { subject: '물리학 I', teacher: '강태양', room: '과학실 1' },
-    thursday: { subject: '국어', teacher: '김민준', room: '3-2' },
+    thursday: { subject: '국어', teacher: '김민준', room: '3-7' },
     friday: { subject: '체육', teacher: '윤서준', room: '체육관' },
   },
   {
     period: 3,
     time: '11:00 - 11:50',
-    monday: { subject: '영어', teacher: '박소율', room: '3-2' },
-    tuesday: { subject: '한국사', teacher: '최지훈', room: '3-2' },
-    wednesday: { subject: '국어', teacher: '김민준', room: '3-2' },
-    thursday: { subject: '수학 I', teacher: '이도현', room: '3-2' },
+    monday: { subject: '영어', teacher: '박소율', room: '3-7' },
+    tuesday: { subject: '한국사', teacher: '최지훈', room: '3-7' },
+    wednesday: { subject: '국어', teacher: '김민준', room: '3-7' },
+    thursday: { subject: '수학 I', teacher: '이도현', room: '3-7' },
     friday: { subject: '진로활동', teacher: '송예린', room: '진로실' },
   },
   {
@@ -33,36 +34,36 @@ export const INITIAL_TIMETABLE: TimetableItem[] = [
     time: '12:00 - 12:50',
     monday: { subject: '화학 I', teacher: '정다은', room: '과학실 2' },
     tuesday: { subject: '체육', teacher: '윤서준', room: '운동장' },
-    wednesday: { subject: '수학 I', teacher: '이도현', room: '3-2' },
+    wednesday: { subject: '수학 I', teacher: '이도현', room: '3-7' },
     thursday: { subject: '생명과학 I', teacher: '한지민', room: '과학실 3' },
-    friday: { subject: '영어', teacher: '박소율', room: '3-2' },
+    friday: { subject: '영어', teacher: '박소율', room: '3-7' },
   },
   {
     period: 5,
     time: '13:50 - 14:40',
     monday: { subject: '생명과학 I', teacher: '한지민', room: '과학실 3' },
     tuesday: { subject: '물리학 I', teacher: '강태양', room: '과학실 1' },
-    wednesday: { subject: '자율활동', teacher: '담임교사', room: '3-2' },
+    wednesday: { subject: '자율활동', teacher: '담임교사', room: '3-7' },
     thursday: { subject: '음악', teacher: '오세은', room: '음악실' },
     friday: { subject: '동아리', teacher: '각 담당', room: '각 특별실' },
   },
   {
     period: 6,
     time: '14:50 - 15:40',
-    monday: { subject: '한국사', teacher: '최지훈', room: '3-2' },
-    tuesday: { subject: '국어', teacher: '김민준', room: '3-2' },
+    monday: { subject: '한국사', teacher: '최지훈', room: '3-7' },
+    tuesday: { subject: '국어', teacher: '김민준', room: '3-7' },
     wednesday: { subject: '체육', teacher: '윤서준', room: '체육관' },
     thursday: { subject: '미술', teacher: '배우진', room: '미술실' },
-    friday: { subject: '학급자치', teacher: '담임교사', room: '3-2' },
+    friday: { subject: '학급자치', teacher: '담임교사', room: '3-7' },
   },
   {
     period: 7,
     time: '15:50 - 16:40',
     monday: { subject: '정보', teacher: '임승호', room: '컴퓨터실' },
-    tuesday: { subject: '자율학습', teacher: '담임교사', room: '3-2' },
+    tuesday: { subject: '자율학습', teacher: '담임교사', room: '3-7' },
     wednesday: { subject: '동아리', teacher: '각 담당', room: '각 특별실' },
     thursday: { subject: '동아리', teacher: '각 담당', room: '각 특별실' },
-    friday: { subject: '대청소/종례', teacher: '담임교사', room: '3-2' },
+    friday: { subject: '대청소/종례', teacher: '담임교사', room: '3-7' },
   },
 ];
 
@@ -170,3 +171,11 @@ export const INITIAL_STUDENTS: SeatStudent[] = [
   { id: 29, name: '황동현', gender: 'M' },
   { id: 30, name: '황지아', gender: 'F' },
 ];
+
+export const DEFAULT_CLASS_SETTINGS: ClassSettings = {
+  grade: 3,
+  classNum: 7,
+  title: '학급운영 허브',
+  teacherName: '담임선생님',
+};
+

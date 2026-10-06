@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { Calendar, RefreshCw, AlertCircle, Plus, Check } from 'lucide-react';
-import { TimetableItem, TimetableChange } from '@/types';
+import { TimetableItem, TimetableChange, ClassSettings } from '@/types';
 
 interface TimetableSectionProps {
   timetable: TimetableItem[];
   changes: TimetableChange[];
   onAddChange: (newChange: TimetableChange) => void;
   onRemoveChange: (id: string) => void;
+  classSettings?: ClassSettings;
 }
 
 const DAYS: { key: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'; label: string }[] = [
@@ -24,7 +25,9 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
   changes,
   onAddChange,
   onRemoveChange,
+  classSettings,
 }) => {
+
   const [selectedDay, setSelectedDay] = useState<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'>('monday');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -164,8 +167,9 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
                   </span>
                 ) : (
                   <span className="px-1.5 py-0.5 rounded text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                    {classInfo.room || '3-2반'}
+                    {classInfo.room || `${classSettings?.grade || 3}-${classSettings?.classNum || 7}반`}
                   </span>
+
                 )}
               </div>
 
