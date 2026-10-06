@@ -1,4 +1,5 @@
-import { TimetableItem, TimetableChange, Post, ScoreItem, SeatStudent, ClassSettings } from '@/types';
+import { TimetableItem, TimetableChange, Post, ScoreItem, SeatStudent, ClassSettings, StudentMember } from '@/types';
+
 
 
 export const INITIAL_TIMETABLE: TimetableItem[] = [
@@ -177,5 +178,40 @@ export const DEFAULT_CLASS_SETTINGS: ClassSettings = {
   classNum: 7,
   title: '학급운영 허브',
   teacherName: '담임선생님',
+  inviteCode: '3077',
 };
+
+export const INITIAL_MEMBERS: StudentMember[] = [
+  ...INITIAL_STUDENTS.map((s, idx) => ({
+    id: s.id,
+    student_no: idx + 1,
+    name: s.name,
+    gender: s.gender,
+    pin: String(1000 + idx + 1),
+    status: 'approved' as const,
+    intro: '우리 반 화이팅!',
+    created_at: '2026-10-06 09:00',
+  })),
+  {
+    id: 31,
+    student_no: 31,
+    name: '이준혁',
+    gender: 'M',
+    pin: '7788',
+    status: 'pending',
+    intro: '선생님! 전학 온 이준혁입니다. 승인 부탁드려요!',
+    created_at: '2026-10-07 00:30',
+  },
+  {
+    id: 32,
+    student_no: 32,
+    name: '최수아',
+    gender: 'F',
+    pin: '9900',
+    status: 'pending',
+    intro: '신규 가입 신청합니다.',
+    created_at: '2026-10-07 00:45',
+  },
+];
+
 

@@ -1,16 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Sun, Moon, Sparkles, Server, Clock, Settings2, Check, X, School } from 'lucide-react';
-import { ClassSettings } from '@/types';
+import { Sun, Moon, Sparkles, Server, Clock, Settings2, Check, X, School, Users, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { ClassSettings, StudentMember } from '@/types';
 import { Modal } from '@/components/Modal';
-
 
 interface HeaderProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   classSettings: ClassSettings;
   onUpdateClassSettings: (settings: ClassSettings) => void;
+  pendingMemberCount?: number;
+  onOpenMemberManager?: () => void;
+  loggedInStudent?: StudentMember | null;
+  onOpenStudentAuth?: () => void;
+  onStudentLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +22,11 @@ export const Header: React.FC<HeaderProps> = ({
   setDarkMode,
   classSettings,
   onUpdateClassSettings,
+  pendingMemberCount = 0,
+  onOpenMemberManager,
+  loggedInStudent,
+  onOpenStudentAuth,
+  onStudentLogout,
 }) => {
   const [timeStr, setTimeStr] = useState('');
   const [dateStr, setDateStr] = useState('');
@@ -98,6 +107,23 @@ export const Header: React.FC<HeaderProps> = ({
                 <Settings2 className="w-3.5 h-3.5" />
                 <span>학년·반 변경</span>
               </button>
+
+              {/* Teacher Member Management Button */}
+              {onOpenMemberManager && (
+                <button
+                  onClick={onOpenMemberManager}
+                  title="학생 가입 승인, 오타 확인 및 학생 비밀번호 관리"
+                  className="px-2.5 py-1 rounded-xl clay-button bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 text-xs font-semibold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform border border-purple-200 dark:border-purple-800/60 shadow-sm"
+                >
+                  <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>구성원 승인·관리</span>
+                  {pendingMemberCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-bounce shadow-sm">
+                      {pendingMemberCount}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               고등학교 교사 및 학생을 위한 올인원 대시보드 & 생산성 도구 (담임: {classSettings.teacherName || '선생님'})
@@ -105,8 +131,38 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Status Indicators & Dark Mode */}
+        {/* Status Indicators & Dark Mode & Student Auth */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+          {/* Student Auth Portal / Profile */}
+          {loggedInStudent ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                🎓 {loggedInStudent.student_no}번 {loggedInStudent.name}
+              </span>
+              {onStudentLogout && (
+                <button
+                  onClick={onStudentLogout}
+                  title="학생 로그아웃"
+                  className="ml-1 text-[11px] text-slate-400 hover:text-rose-500 font-semibold p-0.5 rounded transition-colors"
+                >
+                  로그아웃
+                </button>
+              )}
+            </div>
+          ) : (
+            onOpenStudentAuth && (
+              <button
+                onClick={onOpenStudentAuth}
+                title="학생 로그인 또는 가입 신청"
+                className="px-3 py-1.5 rounded-2xl clay-button bg-gradient-to-r from-indigo-500 to-sky-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>학생 로그인 / 가입</span>
+              </button>
+            )
+          )}
+
           {/* Seoul Region Badge */}
           <div className="px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
             <Server className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 animate-pulse" />

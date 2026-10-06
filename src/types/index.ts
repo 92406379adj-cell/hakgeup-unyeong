@@ -44,10 +44,23 @@ export interface SeatStudent {
   isFixed?: boolean;
 }
 
+export interface StudentMember {
+  id: string | number;
+  student_no: number;
+  name: string;
+  gender: 'M' | 'F';
+  pin: string; // 4자리 비밀번호 (교사 확인 및 학생 로그인용)
+  status: 'pending' | 'approved' | 'rejected';
+  intro?: string;
+  created_at: string;
+}
+
 export interface ClassSettings {
   grade: number;
   classNum: number;
   title: string;
   teacherName?: string;
+  inviteCode?: string; // 학급 초대 코드 (기본 '3077')
 }
+
 

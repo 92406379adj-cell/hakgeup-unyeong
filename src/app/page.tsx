@@ -8,22 +8,42 @@ import { NoticeSection } from '@/components/NoticeSection';
 import { RankingSection } from '@/components/RankingSection';
 import { StudentManagerModal } from '@/components/StudentManagerModal';
 import { ClassAIChatModal } from '@/components/ClassAIChatModal';
+import { TeacherMemberManagementModal } from '@/components/TeacherMemberManagementModal';
+import { StudentAuthModal } from '@/components/StudentAuthModal';
 import {
   INITIAL_TIMETABLE,
   INITIAL_CHANGES,
   INITIAL_POSTS,
   INITIAL_SCORES,
   INITIAL_STUDENTS,
+  INITIAL_MEMBERS,
   DEFAULT_CLASS_SETTINGS,
 } from '@/lib/initialData';
-import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings, SeatStudent } from '@/types';
+import { TimetableItem, TimetableChange, Post, ScoreItem, ClassSettings, SeatStudent, StudentMember } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ShieldCheck, Zap, Database, Server, ExternalLink, Bot } from 'lucide-react';
+
+// Helper to extract SeatStudent list from approved StudentMember list
+const getSeatStudentsFromMembers = (members: StudentMember[]): SeatStudent[] => {
+  return members
+    .filter((m) => m.status === 'approved')
+    .sort((a, b) => a.student_no - b.student_no)
+    .map((m) => ({
+      id: typeof m.id === 'number' ? m.id : Number(m.id) || m.student_no,
+      name: m.name,
+      gender: m.gender,
+    }));
+};
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [classSettings, setClassSettings] = useState<ClassSettings>(DEFAULT_CLASS_SETTINGS);
   const [students, setStudents] = useState<SeatStudent[]>(INITIAL_STUDENTS);
+  const [classMembers, setClassMembers] = useState<StudentMember[]>(INITIAL_MEMBERS);
+  const [isMemberManagerOpen, setIsMemberManagerOpen] = useState(false);
+  const [isStudentAuthOpen, setIsStudentAuthOpen] = useState(false);
+  const [loggedInStudent, setLoggedInStudent] = useState<StudentMember | null>(null);
+
   const [isStudentManagerOpen, setIsStudentManagerOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [timetable, setTimetable] = useState<TimetableItem[]>(INITIAL_TIMETABLE);
@@ -33,9 +53,7 @@ export default function Home() {
   const [scores, setScores] = useState<ScoreItem[]>(INITIAL_SCORES);
   const [dbStatus, setDbStatus] = useState<'connected' | 'offline_fallback'>('offline_fallback');
 
-
-
-  // Initialize theme and classSettings from localStorage
+  // Initialize theme, classSettings, members from localStorage
   useEffect(() => {
     const isDark =
       localStorage.getItem('theme') === 'dark' ||
@@ -49,10 +67,29 @@ export default function Home() {
       } catch (e) {}
     }
 
-    const savedStudents = localStorage.getItem('class_students');
-    if (savedStudents) {
+    const savedMembers = localStorage.getItem('class_members');
+    if (savedMembers) {
       try {
-        setStudents(JSON.parse(savedStudents));
+        const parsed: StudentMember[] = JSON.parse(savedMembers);
+        setClassMembers(parsed);
+        const approved = getSeatStudentsFromMembers(parsed);
+        if (approved.length > 0) {
+          setStudents(approved);
+        }
+      } catch (e) {}
+    } else {
+      const savedStudents = localStorage.getItem('class_students');
+      if (savedStudents) {
+        try {
+          setStudents(JSON.parse(savedStudents));
+        } catch (e) {}
+      }
+    }
+
+    const savedLoggedIn = localStorage.getItem('logged_in_student');
+    if (savedLoggedIn) {
+      try {
+        setLoggedInStudent(JSON.parse(savedLoggedIn));
       } catch (e) {}
     }
   }, []);
@@ -66,8 +103,6 @@ export default function Home() {
     setStudents(newStudents);
     localStorage.setItem('class_students', JSON.stringify(newStudents));
   };
-
-
 
   // Sync dark mode class on html
   useEffect(() => {
@@ -85,6 +120,21 @@ export default function Home() {
     async function loadData() {
       if (isSupabaseConfigured && supabase) {
         try {
+          // Fetch Class Members
+          const { data: membersData, error: membersErr } = await supabase
+            .from('class_members')
+            .select('*')
+            .order('student_no', { ascending: true });
+
+          if (!membersErr && membersData && membersData.length > 0) {
+            setClassMembers(membersData);
+            localStorage.setItem('class_members', JSON.stringify(membersData));
+            const approved = getSeatStudentsFromMembers(membersData);
+            setStudents(approved);
+            localStorage.setItem('class_students', JSON.stringify(approved));
+            setDbStatus('connected');
+          }
+
           // Fetch Posts
           const { data: postsData, error: postsErr } = await supabase
             .from('posts')
@@ -217,6 +267,203 @@ export default function Home() {
     }
   };
 
+  // Sync helper for class members and seat students
+  const syncMembersAndStudents = (newMembers: StudentMember[]) => {
+    setClassMembers(newMembers);
+    localStorage.setItem('class_members', JSON.stringify(newMembers));
+
+    const approvedStudents = getSeatStudentsFromMembers(newMembers);
+    setStudents(approvedStudents);
+    localStorage.setItem('class_students', JSON.stringify(approvedStudents));
+  };
+
+  // Teacher approves member (fixing typos if needed)
+  const handleApproveMember = async (
+    id: string | number,
+    updatedData: { student_no: number; name: string; gender: 'M' | 'F' }
+  ) => {
+    const updated = classMembers.map((m) =>
+      m.id === id
+        ? {
+            ...m,
+            student_no: updatedData.student_no,
+            name: updatedData.name,
+            gender: updatedData.gender,
+            status: 'approved' as const,
+          }
+        : m
+    );
+    syncMembersAndStudents(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from('class_members')
+          .update({
+            student_no: updatedData.student_no,
+            name: updatedData.name,
+            gender: updatedData.gender,
+            status: 'approved',
+          })
+          .eq('id', id);
+      } catch (e) {
+        console.warn('Supabase member approve update failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Teacher rejects member
+  const handleRejectMember = async (id: string | number) => {
+    const updated = classMembers.filter((m) => m.id !== id);
+    syncMembersAndStudents(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('class_members').delete().eq('id', id);
+      } catch (e) {
+        console.warn('Supabase member delete failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Teacher updates member PIN (password reset)
+  const handleUpdateMemberPin = async (id: string | number, newPin: string) => {
+    const updated = classMembers.map((m) =>
+      m.id === id ? { ...m, pin: newPin } : m
+    );
+    syncMembersAndStudents(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from('class_members')
+          .update({ pin: newPin })
+          .eq('id', id);
+      } catch (e) {
+        console.warn('Supabase member pin update failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Teacher deletes member
+  const handleDeleteMember = async (id: string | number) => {
+    const updated = classMembers.filter((m) => m.id !== id);
+    syncMembersAndStudents(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('class_members').delete().eq('id', id);
+      } catch (e) {
+        console.warn('Supabase member delete failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Teacher adds member directly
+  const handleAddMemberDirectly = async (
+    newMemberData: Omit<StudentMember, 'id' | 'created_at'>
+  ) => {
+    const newMember: StudentMember = {
+      id: Date.now(),
+      student_no: newMemberData.student_no,
+      name: newMemberData.name,
+      gender: newMemberData.gender,
+      pin: newMemberData.pin,
+      status: 'approved',
+      intro: newMemberData.intro,
+      created_at: new Date().toLocaleString('ko-KR', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
+    const updated = [...classMembers, newMember];
+    syncMembersAndStudents(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('class_members').insert([
+          {
+            student_no: newMember.student_no,
+            name: newMember.name,
+            gender: newMember.gender,
+            pin: newMember.pin,
+            status: 'approved',
+            intro: newMember.intro,
+            created_at: newMember.created_at,
+          },
+        ]);
+      } catch (e) {
+        console.warn('Supabase direct member insert failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Student requests sign up
+  const handleRequestSignUp = async (
+    newMemberData: Omit<StudentMember, 'id' | 'created_at' | 'status'>
+  ) => {
+    const newMember: StudentMember = {
+      id: Date.now(),
+      student_no: newMemberData.student_no,
+      name: newMemberData.name,
+      gender: newMemberData.gender,
+      pin: newMemberData.pin,
+      status: 'pending',
+      intro: newMemberData.intro,
+      created_at: new Date().toLocaleString('ko-KR', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
+    const updated = [...classMembers, newMember];
+    setClassMembers(updated);
+    localStorage.setItem('class_members', JSON.stringify(updated));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('class_members').insert([
+          {
+            student_no: newMember.student_no,
+            name: newMember.name,
+            gender: newMember.gender,
+            pin: newMember.pin,
+            status: 'pending',
+            intro: newMember.intro,
+            created_at: newMember.created_at,
+          },
+        ]);
+      } catch (e) {
+        console.warn('Supabase member signup insert failed, saved locally:', e);
+      }
+    }
+  };
+
+  // Student login success
+  const handleStudentLoginSuccess = (student: StudentMember) => {
+    setLoggedInStudent(student);
+    localStorage.setItem('logged_in_student', JSON.stringify(student));
+  };
+
+  // Student logout
+  const handleStudentLogout = () => {
+    setLoggedInStudent(null);
+    localStorage.removeItem('logged_in_student');
+  };
+
+  // Update Invite Code
+  const handleUpdateInviteCode = (newCode: string) => {
+    const updated = { ...classSettings, inviteCode: newCode };
+    handleUpdateClassSettings(updated);
+  };
+
+  const pendingMemberCount = classMembers.filter((m) => m.status === 'pending').length;
+
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Header with claymorphism & dark mode switch */}
@@ -225,6 +472,11 @@ export default function Home() {
         setDarkMode={setDarkMode}
         classSettings={classSettings}
         onUpdateClassSettings={handleUpdateClassSettings}
+        pendingMemberCount={pendingMemberCount}
+        onOpenMemberManager={() => setIsMemberManagerOpen(true)}
+        loggedInStudent={loggedInStudent}
+        onOpenStudentAuth={() => setIsStudentAuthOpen(true)}
+        onStudentLogout={handleStudentLogout}
       />
 
       {/* Bento Grid Layout */}
@@ -239,7 +491,6 @@ export default function Home() {
             classSettings={classSettings}
           />
         </div>
-
 
         {/* Bento Cell 2: Points & Praise Ranking (4-col) */}
         <div className="lg:col-span-4">
@@ -257,7 +508,6 @@ export default function Home() {
             onOpenStudentManager={() => setIsStudentManagerOpen(true)}
           />
         </div>
-
 
         {/* Bento Cell 4: Notices & Board (5-col) */}
         <div className="lg:col-span-5">
@@ -327,6 +577,30 @@ export default function Home() {
           AI 알리미 질문
         </span>
       </button>
+
+      {/* Teacher Member Management Modal via Portal */}
+      <TeacherMemberManagementModal
+        isOpen={isMemberManagerOpen}
+        onClose={() => setIsMemberManagerOpen(false)}
+        classMembers={classMembers}
+        classSettings={classSettings}
+        onApproveMember={handleApproveMember}
+        onRejectMember={handleRejectMember}
+        onUpdateMemberPin={handleUpdateMemberPin}
+        onDeleteMember={handleDeleteMember}
+        onAddMemberDirectly={handleAddMemberDirectly}
+        onUpdateInviteCode={handleUpdateInviteCode}
+      />
+
+      {/* Student Auth Modal (Login / Sign Up) via Portal */}
+      <StudentAuthModal
+        isOpen={isStudentAuthOpen}
+        onClose={() => setIsStudentAuthOpen(false)}
+        classSettings={classSettings}
+        classMembers={classMembers}
+        onLoginSuccess={handleStudentLoginSuccess}
+        onRequestSignUp={handleRequestSignUp}
+      />
 
       {/* Student Roster Manager Modal via Portal */}
       <StudentManagerModal
