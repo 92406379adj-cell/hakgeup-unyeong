@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, RefreshCw, AlertCircle, Plus, Check } from 'lucide-react';
+import { Calendar, RefreshCw, AlertCircle, Plus, Check, X } from 'lucide-react';
 import { TimetableItem, TimetableChange, ClassSettings } from '@/types';
+import { Modal } from '@/components/Modal';
+
 
 interface TimetableSectionProps {
   timetable: TimetableItem[];
@@ -244,126 +246,131 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
       )}
 
       {/* Modal for adding timetable change */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-extrabold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-indigo-500" /> 시간표 변동 / 대강 등록
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              출장, 결강, 행사 등으로 인한 수업 변경 사항을 입력하세요.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                    요일 선택
-                  </label>
-                  <select
-                    value={formDay}
-                    onChange={(e) => handleDaySelectInForm(e.target.value as any)}
-                    className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100"
-                  >
-                    {DAYS.map((d) => (
-                      <option key={d.key} value={d.key}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                    교시 선택
-                  </label>
-                  <select
-                    value={formPeriod}
-                    onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                    className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7].map((p) => (
-                      <option key={p} value={p}>
-                        {p}교시
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                  기존 과목 (자동 채움)
-                </label>
-                <input
-                  type="text"
-                  value={formOrig}
-                  onChange={(e) => setFormOrig(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 p-2.5 text-slate-700 dark:text-slate-300"
-                  placeholder="기존 과목"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                  변경/대체 과목 <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formNew}
-                  onChange={(e) => setFormNew(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="예: 물리학 I (보강), 진로상담, 자율활동"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                    담당/대체 교사
-                  </label>
-                  <input
-                    type="text"
-                    value={formTeacher}
-                    onChange={(e) => setFormTeacher(e.target.value)}
-                    className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="교사명"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                    변경 사유
-                  </label>
-                  <input
-                    type="text"
-                    value={formReason}
-                    onChange={(e) => setFormReason(e.target.value)}
-                    className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="예: 교사 연수, 축제 준비"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20 flex items-center gap-1"
-                >
-                  <Check className="w-3.5 h-3.5" /> 저장 및 적용
-                </button>
-              </div>
-            </form>
-          </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 text-indigo-500" /> 시간표 변동 / 대강 등록
+          </h3>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      )}
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          출장, 결강, 행사 등으로 인한 수업 변경 사항을 입력하세요.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                요일 선택
+              </label>
+              <select
+                value={formDay}
+                onChange={(e) => handleDaySelectInForm(e.target.value as any)}
+                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100"
+              >
+                {DAYS.map((d) => (
+                  <option key={d.key} value={d.key}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                교시 선택
+              </label>
+              <select
+                value={formPeriod}
+                onChange={(e) => handlePeriodChange(Number(e.target.value))}
+                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100"
+              >
+                {[1, 2, 3, 4, 5, 6, 7].map((p) => (
+                  <option key={p} value={p}>
+                    {p}교시
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+              기존 과목 (자동 채움)
+            </label>
+            <input
+              type="text"
+              value={formOrig}
+              onChange={(e) => setFormOrig(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 p-2.5 text-slate-700 dark:text-slate-300"
+              placeholder="기존 과목"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+              변경/대체 과목 <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formNew}
+              onChange={(e) => setFormNew(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="예: 물리학 I (보강), 진로상담, 자율활동"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                담당/대체 교사
+              </label>
+              <input
+                type="text"
+                value={formTeacher}
+                onChange={(e) => setFormTeacher(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="교사명"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                변경 사유
+              </label>
+              <input
+                type="text"
+                value={formReason}
+                onChange={(e) => setFormReason(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="예: 교사 연수, 축제 준비"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20 flex items-center gap-1"
+            >
+              <Check className="w-3.5 h-3.5" /> 저장 및 적용
+            </button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 };

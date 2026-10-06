@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Trophy, Medal, Award, Plus, Flame, Sparkles } from 'lucide-react';
+import { Trophy, Medal, Award, Plus, Flame, Sparkles, X } from 'lucide-react';
 import { ScoreItem } from '@/types';
+import { Modal } from '@/components/Modal';
+
 
 interface RankingSectionProps {
   scores: ScoreItem[];
@@ -163,81 +165,86 @@ export const RankingSection: React.FC<RankingSectionProps> = ({ scores, onAddSco
       </div>
 
       {/* Modal for adding score */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
-            <h3 className="text-lg font-extrabold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" /> 학급 활동 칭찬 점수 부여
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              성실한 발표, 청소 봉사, 퀴즈 참여 학생에게 스탬프를 부여합니다.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-3.5">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                  학생 이름 / 닉네임
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="예: 김민서, 1모둠"
-                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
-                  부여할 점수 (기본 10점 ~ 50점)
-                </label>
-                <div className="grid grid-cols-4 gap-1.5 mb-2">
-                  {[5, 10, 20, 50].map((pts) => (
-                    <button
-                      key={pts}
-                      type="button"
-                      onClick={() => setScoreToAdd(pts)}
-                      className={`py-1.5 rounded-lg text-xs font-bold border ${
-                        scoreToAdd === pts
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
-                      }`}
-                    >
-                      +{pts}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  max={200}
-                  value={scoreToAdd}
-                  onChange={(e) => setScoreToAdd(Number(e.target.value))}
-                  className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 shadow-md shadow-purple-500/20"
-                >
-                  점수 등록
-                </button>
-              </div>
-            </form>
-          </div>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="max-w-sm">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-500" /> 학급 활동 칭찬 점수 부여
+          </h3>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      )}
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          성실한 발표, 청소 봉사, 퀴즈 참여 학생에게 스탬프를 부여합니다.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+              학생 이름 / 닉네임
+            </label>
+            <input
+              type="text"
+              required
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="예: 김민서, 1모둠"
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+              부여할 점수 (기본 10점 ~ 50점)
+            </label>
+            <div className="grid grid-cols-4 gap-1.5 mb-2">
+              {[5, 10, 20, 50].map((pts) => (
+                <button
+                  key={pts}
+                  type="button"
+                  onClick={() => setScoreToAdd(pts)}
+                  className={`py-1.5 rounded-lg text-xs font-bold border ${
+                    scoreToAdd === pts
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+                  }`}
+                >
+                  +{pts}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              required
+              min={1}
+              max={200}
+              value={scoreToAdd}
+              onChange={(e) => setScoreToAdd(Number(e.target.value))}
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 shadow-md shadow-purple-500/20"
+            >
+              점수 등록
+            </button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 };
