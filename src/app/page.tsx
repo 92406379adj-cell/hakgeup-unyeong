@@ -11,6 +11,7 @@ import { ClassAIChatModal } from '@/components/ClassAIChatModal';
 import { TeacherMemberManagementModal } from '@/components/TeacherMemberManagementModal';
 import { StudentAuthModal } from '@/components/StudentAuthModal';
 import { TeacherAuthModal } from '@/components/TeacherAuthModal';
+import { MealSection } from '@/components/MealSection';
 import {
   INITIAL_TIMETABLE,
   INITIAL_CHANGES,
@@ -517,13 +518,9 @@ export default function Home() {
           />
         </div>
 
-        {/* Bento Cell 2: Points & Praise Ranking (4-col) */}
+        {/* Bento Cell 2: Suncheon Bokseong High School NEIS Meal Service (4-col) */}
         <div className="lg:col-span-4">
-          <RankingSection
-            scores={scores}
-            onAddScore={handleAddScore}
-            students={students}
-          />
+          <MealSection />
         </div>
 
         {/* Bento Cell 3: Smart Seating Arrangement (7-col) */}
@@ -540,8 +537,17 @@ export default function Home() {
           />
         </div>
 
-        {/* Bento Cell 4: Notices & Board (5-col) */}
+        {/* Bento Cell 4: Points & Praise Ranking (5-col) */}
         <div className="lg:col-span-5">
+          <RankingSection
+            scores={scores}
+            onAddScore={handleAddScore}
+            students={students}
+          />
+        </div>
+
+        {/* Bento Cell 5: Notices & Board (12-col Full Width) */}
+        <div className="lg:col-span-12">
           <NoticeSection
             posts={posts}
             onAddPost={handleAddPost}

@@ -91,6 +91,56 @@ ${postsContext}
     let matchedPost = null;
     const lowerQ = message.toLowerCase();
 
+    // Check meal question
+    if (
+      lowerQ.includes('급식') ||
+      lowerQ.includes('점심') ||
+      lowerQ.includes('중식') ||
+      lowerQ.includes('저녁') ||
+      lowerQ.includes('석식') ||
+      lowerQ.includes('식단') ||
+      lowerQ.includes('밥') ||
+      lowerQ.includes('메뉴')
+    ) {
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const ymd = `${year}${month}${day}`;
+
+        const neisRes = await fetch(
+          `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&ATPT_OFCDC_SC_CODE=Q10&SD_SCHUL_CODE=7140281&MLSV_YMD=${ymd}`,
+          { next: { revalidate: 3600 } }
+        );
+        const neisJson = await neisRes.json();
+        const rows = neisJson?.mealServiceDietInfo?.[1]?.row || [];
+
+        const lunch = rows.find((r: any) => r.MMEAL_SC_CODE === '2');
+        const dinner = rows.find((r: any) => r.MMEAL_SC_CODE === '3');
+
+        let reply = `🍱 **순천복성고 오늘의 급식 안내** (${month}월 ${day}일)\n\n`;
+        if (lunch) {
+          const dishes = lunch.DDISH_NM.replace(/<br\s*\/?>/g, ', ').replace(/\([\d\.]+\)/g, '').trim();
+          reply += `☀️ **점심(중식)** [${lunch.CAL_INFO || ''}]\n• ${dishes}\n\n`;
+        } else {
+          reply += `☀️ **점심(중식)**: 등록된 식단이 없습니다.\n\n`;
+        }
+
+        if (dinner) {
+          const dishes = dinner.DDISH_NM.replace(/<br\s*\/?>/g, ', ').replace(/\([\d\.]+\)/g, '').trim();
+          reply += `🌙 **저녁(석식)** [${dinner.CAL_INFO || ''}]\n• ${dishes}\n\n`;
+        } else {
+          reply += `🌙 **저녁(석식)**: 등록된 식단이 없습니다.\n\n`;
+        }
+
+        reply += `맛있게 드시고 오늘도 즐겁고 활기찬 하루 보내세요! 😋`;
+        return NextResponse.json({ reply, source: 'neis_meal' });
+      } catch (e) {
+        // Continue to posts matching
+      }
+    }
+
     for (const post of posts) {
       const titleLower = (post.title || '').toLowerCase();
       const contentLower = (post.content || '').toLowerCase();
