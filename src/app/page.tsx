@@ -515,6 +515,7 @@ export default function Home() {
             onAddChange={handleAddChange}
             onRemoveChange={handleRemoveChange}
             classSettings={classSettings}
+            onTimetableUpdate={(newTimetable) => setTimetable(newTimetable)}
           />
         </div>
 

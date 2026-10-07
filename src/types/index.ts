@@ -1,11 +1,21 @@
+export interface TimetableDaySlot {
+  subject: string;
+  teacher: string;
+  room?: string;
+  changed?: boolean;
+  note?: string;
+  isNeis?: boolean;
+  isEvent?: boolean;
+}
+
 export interface TimetableItem {
   period: number;
   time: string;
-  monday: { subject: string; teacher: string; room?: string; changed?: boolean; note?: string };
-  tuesday: { subject: string; teacher: string; room?: string; changed?: boolean; note?: string };
-  wednesday: { subject: string; teacher: string; room?: string; changed?: boolean; note?: string };
-  thursday: { subject: string; teacher: string; room?: string; changed?: boolean; note?: string };
-  friday: { subject: string; teacher: string; room?: string; changed?: boolean; note?: string };
+  monday: TimetableDaySlot;
+  tuesday: TimetableDaySlot;
+  wednesday: TimetableDaySlot;
+  thursday: TimetableDaySlot;
+  friday: TimetableDaySlot;
 }
 
 export interface TimetableChange {

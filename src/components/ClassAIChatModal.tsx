@@ -31,10 +31,10 @@ interface ChatMessage {
 }
 
 const DEFAULT_SUGGESTIONS = [
+  '오늘 순천복성고 3학년 7반 시간표 알려줘',
   '오늘 순천복성고 점심/저녁 메뉴 뭐야?',
   '중간고사 시험 일정이 언제야?',
   '과학탐구실험 보고서 마감일 언제까지야?',
-  '축제 학급 부스 투표 아이디어 알려줘',
 ];
 
 export const ClassAIChatModal: React.FC<ClassAIChatModalProps> = ({

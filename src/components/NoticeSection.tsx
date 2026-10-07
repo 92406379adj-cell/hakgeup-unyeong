@@ -107,9 +107,9 @@ export const NoticeSection: React.FC<NoticeSectionProps> = ({
         >
           <div className="flex items-center gap-2 text-xs text-indigo-900 dark:text-indigo-200">
             <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-            <span className="font-semibold">시험 일정이나 수행평가 마감이 궁금한가요?</span>
+            <span className="font-semibold">오늘 시간표, 급식 메뉴, 시험 일정이 궁금한가요?</span>
             <span className="hidden sm:inline text-slate-500 dark:text-slate-400 text-[11px]">
-              AI가 공지사항을 분석해 즉시 알려드려요!
+              AI가 나이스 실시간 시간표·급식 및 공지사항을 분석해 즉시 알려드려요!
             </span>
           </div>
           <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 shrink-0 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-700">
