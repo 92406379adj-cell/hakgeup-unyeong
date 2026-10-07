@@ -179,6 +179,7 @@ export const DEFAULT_CLASS_SETTINGS: ClassSettings = {
   title: '학급운영 허브',
   teacherName: '담임선생님',
   inviteCode: '3077',
+  teacherPassword: 'admin1234',
 };
 
 export const INITIAL_MEMBERS: StudentMember[] = [

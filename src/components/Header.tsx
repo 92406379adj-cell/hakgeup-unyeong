@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Sun, Moon, Sparkles, Server, Clock, Settings2, Check, X, School, Users, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { Sun, Moon, Sparkles, Server, Clock, Settings2, Check, X, School, Users, LogIn, LogOut, UserCheck, Lock, Unlock, ShieldCheck } from 'lucide-react';
 import { ClassSettings, StudentMember } from '@/types';
 import { Modal } from '@/components/Modal';
 
@@ -15,6 +15,9 @@ interface HeaderProps {
   loggedInStudent?: StudentMember | null;
   onOpenStudentAuth?: () => void;
   onStudentLogout?: () => void;
+  isTeacherLoggedIn?: boolean;
+  onOpenTeacherAuth?: () => void;
+  onTeacherLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +30,9 @@ export const Header: React.FC<HeaderProps> = ({
   loggedInStudent,
   onOpenStudentAuth,
   onStudentLogout,
+  isTeacherLoggedIn = false,
+  onOpenTeacherAuth,
+  onTeacherLogout,
 }) => {
   const [timeStr, setTimeStr] = useState('');
   const [dateStr, setDateStr] = useState('');
@@ -100,24 +106,48 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Admin Class Edit Button */}
               <button
-                onClick={() => setIsEditModalOpen(true)}
-                title="학년/반 및 학급 명칭 관리자 수정"
-                className="px-2.5 py-1 rounded-xl clay-button bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 text-xs font-semibold flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform"
+                onClick={() => {
+                  if (!isTeacherLoggedIn && onOpenTeacherAuth) {
+                    onOpenTeacherAuth();
+                  } else {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+                title={isTeacherLoggedIn ? '학년/반 및 학급 명칭 관리자 수정' : '교사 로그인 필요 (클릭 시 로그인)'}
+                className={`px-2.5 py-1 rounded-xl clay-button text-xs font-semibold flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform ${
+                  isTeacherLoggedIn
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                }`}
               >
-                <Settings2 className="w-3.5 h-3.5" />
+                {isTeacherLoggedIn ? <Settings2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-slate-400" />}
                 <span>학년·반 변경</span>
               </button>
 
               {/* Teacher Member Management Button */}
               {onOpenMemberManager && (
                 <button
-                  onClick={onOpenMemberManager}
-                  title="학생 가입 승인, 오타 확인 및 학생 비밀번호 관리"
-                  className="px-2.5 py-1 rounded-xl clay-button bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 text-xs font-semibold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform border border-purple-200 dark:border-purple-800/60 shadow-sm"
+                  onClick={() => {
+                    if (!isTeacherLoggedIn && onOpenTeacherAuth) {
+                      onOpenTeacherAuth();
+                    } else {
+                      onOpenMemberManager();
+                    }
+                  }}
+                  title={isTeacherLoggedIn ? '학생 가입 승인, 오타 확인 및 학생 비밀번호 관리' : '교사 로그인 필요 (클릭 시 로그인)'}
+                  className={`px-2.5 py-1 rounded-xl clay-button text-xs font-semibold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform shadow-sm ${
+                    isTeacherLoggedIn
+                      ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 border border-purple-200 dark:border-purple-800/60'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  }`}
                 >
-                  <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  {isTeacherLoggedIn ? (
+                    <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  ) : (
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  )}
                   <span>구성원 승인·관리</span>
-                  {pendingMemberCount > 0 && (
+                  {pendingMemberCount > 0 && isTeacherLoggedIn && (
                     <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-bounce shadow-sm">
                       {pendingMemberCount}
                     </span>
@@ -131,8 +161,42 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Status Indicators & Dark Mode & Student Auth */}
+        {/* Status Indicators & Dark Mode & Teacher/Student Auth */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+          {/* Teacher Auth Portal / Status Badge */}
+          {isTeacherLoggedIn ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-950/80 dark:to-indigo-950/80 border border-purple-300 dark:border-purple-800 text-xs shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <button
+                onClick={onOpenTeacherAuth}
+                title="교사 관리자 설정 (비밀번호 변경 등)"
+                className="font-extrabold text-purple-900 dark:text-purple-200 hover:underline flex items-center gap-1"
+              >
+                👨‍🏫 {classSettings.teacherName || '담임교사'} (관리자)
+              </button>
+              {onTeacherLogout && (
+                <button
+                  onClick={onTeacherLogout}
+                  title="교사 관리자 로그아웃"
+                  className="ml-1 text-[11px] text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-bold p-0.5 rounded transition-colors"
+                >
+                  로그아웃
+                </button>
+              )}
+            </div>
+          ) : (
+            onOpenTeacherAuth && (
+              <button
+                onClick={onOpenTeacherAuth}
+                title="담임교사(관리자) 로그인"
+                className="px-3 py-1.5 rounded-2xl clay-button bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 hover:bg-purple-100 hover:text-purple-900 text-xs font-bold flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 transition-all border border-purple-200 dark:border-purple-800/60"
+              >
+                <Lock className="w-3.5 h-3.5 text-purple-500" />
+                <span>교사 로그인</span>
+              </button>
+            )
+          )}
+
           {/* Student Auth Portal / Profile */}
           {loggedInStudent ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs shadow-sm">

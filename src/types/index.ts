@@ -61,6 +61,7 @@ export interface ClassSettings {
   title: string;
   teacherName?: string;
   inviteCode?: string; // 학급 초대 코드 (기본 '3077')
+  teacherPassword?: string; // 교사 관리자 비밀번호 (기본 'admin1234')
 }
 
 

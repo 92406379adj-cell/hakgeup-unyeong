@@ -10,6 +10,7 @@ import { StudentManagerModal } from '@/components/StudentManagerModal';
 import { ClassAIChatModal } from '@/components/ClassAIChatModal';
 import { TeacherMemberManagementModal } from '@/components/TeacherMemberManagementModal';
 import { StudentAuthModal } from '@/components/StudentAuthModal';
+import { TeacherAuthModal } from '@/components/TeacherAuthModal';
 import {
   INITIAL_TIMETABLE,
   INITIAL_CHANGES,
@@ -42,6 +43,8 @@ export default function Home() {
   const [classMembers, setClassMembers] = useState<StudentMember[]>(INITIAL_MEMBERS);
   const [isMemberManagerOpen, setIsMemberManagerOpen] = useState(false);
   const [isStudentAuthOpen, setIsStudentAuthOpen] = useState(false);
+  const [isTeacherAuthOpen, setIsTeacherAuthOpen] = useState(false);
+  const [isTeacherLoggedIn, setIsTeacherLoggedIn] = useState(false);
   const [loggedInStudent, setLoggedInStudent] = useState<StudentMember | null>(null);
 
   const [isStudentManagerOpen, setIsStudentManagerOpen] = useState(false);
@@ -66,6 +69,9 @@ export default function Home() {
         setClassSettings(JSON.parse(savedSettings));
       } catch (e) {}
     }
+
+    const savedTeacherLogged = localStorage.getItem('is_teacher_logged_in') === 'true';
+    setIsTeacherLoggedIn(savedTeacherLogged);
 
     const savedMembers = localStorage.getItem('class_members');
     if (savedMembers) {
@@ -462,6 +468,22 @@ export default function Home() {
     handleUpdateClassSettings(updated);
   };
 
+  // Teacher auth handlers
+  const handleTeacherLoginSuccess = () => {
+    setIsTeacherLoggedIn(true);
+    localStorage.setItem('is_teacher_logged_in', 'true');
+  };
+
+  const handleTeacherLogout = () => {
+    setIsTeacherLoggedIn(false);
+    localStorage.removeItem('is_teacher_logged_in');
+  };
+
+  const handleUpdateTeacherPassword = (newPassword: string) => {
+    const updated = { ...classSettings, teacherPassword: newPassword };
+    handleUpdateClassSettings(updated);
+  };
+
   const pendingMemberCount = classMembers.filter((m) => m.status === 'pending').length;
 
   return (
@@ -477,6 +499,9 @@ export default function Home() {
         loggedInStudent={loggedInStudent}
         onOpenStudentAuth={() => setIsStudentAuthOpen(true)}
         onStudentLogout={handleStudentLogout}
+        isTeacherLoggedIn={isTeacherLoggedIn}
+        onOpenTeacherAuth={() => setIsTeacherAuthOpen(true)}
+        onTeacherLogout={handleTeacherLogout}
       />
 
       {/* Bento Grid Layout */}
@@ -505,7 +530,13 @@ export default function Home() {
         <div className="lg:col-span-7">
           <SeatingSection
             students={students}
-            onOpenStudentManager={() => setIsStudentManagerOpen(true)}
+            onOpenStudentManager={() => {
+              if (!isTeacherLoggedIn) {
+                setIsTeacherAuthOpen(true);
+              } else {
+                setIsStudentManagerOpen(true);
+              }
+            }}
           />
         </div>
 
@@ -590,6 +621,17 @@ export default function Home() {
         onDeleteMember={handleDeleteMember}
         onAddMemberDirectly={handleAddMemberDirectly}
         onUpdateInviteCode={handleUpdateInviteCode}
+      />
+
+      {/* Teacher Auth Modal via Portal */}
+      <TeacherAuthModal
+        isOpen={isTeacherAuthOpen}
+        onClose={() => setIsTeacherAuthOpen(false)}
+        classSettings={classSettings}
+        isTeacherLoggedIn={isTeacherLoggedIn}
+        onLoginSuccess={handleTeacherLoginSuccess}
+        onLogout={handleTeacherLogout}
+        onUpdateTeacherPassword={handleUpdateTeacherPassword}
       />
 
       {/* Student Auth Modal (Login / Sign Up) via Portal */}
