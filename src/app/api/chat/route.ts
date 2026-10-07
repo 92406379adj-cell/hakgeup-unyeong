@@ -29,19 +29,42 @@ export async function POST(req: Request) {
           .join('\n\n')
       : '현재 등록된 공지사항이 없습니다.';
 
+    // Fetch today's meal info from NEIS to include in AI system prompt context
+    let mealContext = '';
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const ymd = `${year}${month}${day}`;
+      const neisRes = await fetch(
+        `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&ATPT_OFCDC_SC_CODE=Q10&SD_SCHUL_CODE=7140281&MLSV_YMD=${ymd}`,
+        { next: { revalidate: 3600 } }
+      );
+      const neisJson = await neisRes.json();
+      const rows = neisJson?.mealServiceDietInfo?.[1]?.row || [];
+      const lunch = rows.find((r: any) => r.MMEAL_SC_CODE === '2');
+      const dinner = rows.find((r: any) => r.MMEAL_SC_CODE === '3');
+      mealContext = `[순천복성고 오늘의 급식 (${month}월 ${day}일)]\n- 점심(중식): ${lunch ? lunch.DDISH_NM.replace(/<br\s*\/?>/g, ', ').replace(/\([\d\.]+\)/g, '') + ' (' + lunch.CAL_INFO + ')' : '등록된 식단 없음'}\n- 저녁(석식): ${dinner ? dinner.DDISH_NM.replace(/<br\s*\/?>/g, ', ').replace(/\([\d\.]+\)/g, '') + ' (' + dinner.CAL_INFO + ')' : '등록된 식단 없음'}`;
+    } catch (e) {}
+
     const systemPrompt = `당신은 ${grade}학년 ${classNum}반의 친절하고 똑똑한 '학급 AI 알리미'입니다.
-학생들이 학급 공지사항, 학사일정, 수행평가 과제/마감일, 축제 및 학급 행사, 시간표 등에 대해 질문하면 아래에 제공된 [우리 반 실시간 공지사항 및 학급 데이터]를 바탕으로 정확하고 친절하게 답변해주세요.
+학생들이 학급 공지사항, 학사일정, 수행평가 과제/마감일, 축제 및 학급 행사, 시간표, 순천복성고등학교 오늘 급식(점심/저녁) 등에 대해 질문하면 아래에 제공된 [우리 반 실시간 공지사항 및 학급 데이터]를 바탕으로 정확하고 친절하게 답변해주세요.
 
 [답변 원칙]
 1. 학생들에게 친절하고 따뜻한 어조(존댓말)와 귀여운 이모지를 적절히 사용하여 답변해주세요.
-2. 공지사항에 적힌 날짜, 마감 시간, 준비물, 유의사항 등의 핵심 정보를 명확히 강조해주세요.
+2. 공지사항 및 급식 정보에 적힌 날짜, 메뉴, 마감 시간, 유의사항 등의 핵심 정보를 명확히 강조해주세요.
 3. 만약 공지사항이나 학급 데이터에 없는 내용이라면 거짓으로 지어내지 말고, "현재 등록된 학급 공지사항에는 해당 내용이 없습니다. 담임선생님이나 반장에게 확인해 주세요!"라고 정직하게 안내해주세요.
 4. 답변은 간결하고 가독성 좋게 글머리 기호(불릿 포인트) 등을 활용해 작성해주세요.
 
 [우리 반 실시간 공지사항 목록]
 ${postsContext}
 
+[순천복성고등학교 오늘자 실시간 급식 식단표]
+${mealContext || '급식 데이터 없음'}
+
 [학급 기본 정보]
+- 학교명: 순천복성고등학교
 - 학년/반: ${grade}학년 ${classNum}반
 - 담임교사: ${classSettings?.teacherName || '담임선생님'}
 `;
