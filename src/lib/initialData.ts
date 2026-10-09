@@ -51,20 +51,20 @@ export const INITIAL_TIMETABLE: TimetableItem[] = [
   {
     period: 6,
     time: '14:50 - 15:40',
-    monday: { subject: '한국사', teacher: '역사 교사', room: '3-7' },
-    tuesday: { subject: '심화 수학Ⅰ', teacher: '수학 교사', room: '3-7' },
+    monday: { subject: '영어 독해와 작문', teacher: '영어 교사', room: '3-7' },
+    tuesday: { subject: '영어 독해와 작문', teacher: '영어 교사', room: '3-7' },
     wednesday: { subject: '체육', teacher: '체육 교사', room: '체육관' },
-    thursday: { subject: '지구과학Ⅱ', teacher: '지학 교사', room: '과학실 4' },
-    friday: { subject: '학급자치', teacher: '담임교사', room: '3-7' },
+    thursday: { subject: '심화 수학Ⅰ', teacher: '수학 교사', room: '3-7' },
+    friday: { subject: '기하', teacher: '수학 교사', room: '3-7' },
   },
   {
     period: 7,
     time: '15:50 - 16:40',
-    monday: { subject: '자율학습', teacher: '담임교사', room: '3-7' },
-    tuesday: { subject: '자율학습', teacher: '담임교사', room: '3-7' },
+    monday: { subject: '과학융합', teacher: '과학 교사', room: '과학실' },
+    tuesday: { subject: '심리학', teacher: '상담 교사', room: '상담실' },
     wednesday: { subject: '동아리', teacher: '동아리 담당', room: '특별실' },
-    thursday: { subject: '자율학습', teacher: '담임교사', room: '3-7' },
-    friday: { subject: '대청소/종례', teacher: '담임교사', room: '3-7' },
+    thursday: { subject: '화법과 작문', teacher: '국어 교사', room: '3-7' },
+    friday: { subject: '화학Ⅱ', teacher: '화학 교사', room: '과학실 2' },
   },
 ];
 

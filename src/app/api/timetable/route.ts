@@ -35,6 +35,7 @@ const SUBJECT_DETAILS: Record<string, { teacher: string; room: string; isEvent?:
   '심리학G': { teacher: '상담 교사', room: '상담실' },
   '진로 영어': { teacher: '영어 교사', room: '3-7' },
   '고전과 윤리': { teacher: '윤리 교사', room: '3-7' },
+  '과학융합': { teacher: '과학 교사', room: '과학실' },
 };
 
 // Period standard times
@@ -109,7 +110,7 @@ export async function GET(request: Request) {
     const weekLabel = `${mondayDate.getFullYear()}년 ${mondayDate.getMonth() + 1}월 ${formatDateToDisplay(mondayDate)} ~ ${formatDateToDisplay(fridayDate)}`;
 
     // 2. Fetch NEIS hisTimetable data concurrently for each day of the week
-    const neisKey = searchParams.get('neisKey') || process.env.NEIS_API_KEY || '';
+    const neisKey = searchParams.get('neisKey') || process.env.NEIS_API_KEY || '8acce9b8e59349ca9fd3a2ff3285e675';
     const dayFetchPromises = weekDays.map(async (dayInfo) => {
       try {
         let neisUrl = `https://open.neis.go.kr/hub/hisTimetable?Type=json&ATPT_OFCDC_SC_CODE=${NEIS_CONFIG.ATPT_OFCDC_SC_CODE}&SD_SCHUL_CODE=${NEIS_CONFIG.SD_SCHUL_CODE}&GRADE=${grade}&CLASS_NM=${classNum}&ALL_TI_YMD=${dayInfo.ymd}`;
