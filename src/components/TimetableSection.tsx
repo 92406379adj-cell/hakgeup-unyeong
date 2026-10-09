@@ -15,9 +15,11 @@ import {
   School,
   Clock,
   Info,
+  BookOpen,
 } from 'lucide-react';
 import { TimetableItem, TimetableChange, ClassSettings } from '@/types';
 import { Modal } from '@/components/Modal';
+import { INITIAL_TIMETABLE } from '@/lib/initialData';
 
 interface TimetableSectionProps {
   timetable: TimetableItem[];
@@ -62,6 +64,7 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
   onTimetableUpdate,
 }) => {
   const [selectedDay, setSelectedDay] = useState<DayKey>(getTodayDayKey());
+  const [viewMode, setViewMode] = useState<'realtime' | 'regular'>('realtime');
   const [timetableData, setTimetableData] = useState<TimetableItem[]>(timetable);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoadingNeis, setIsLoadingNeis] = useState(false);
@@ -123,8 +126,11 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
     setWeekOffset(newOffset);
   };
 
+  // Determine which timetable array to display
+  const activeTimetable = viewMode === 'regular' ? INITIAL_TIMETABLE : timetableData;
+
   const handleOpenModal = () => {
-    const defaultItem = timetableData.find((t) => t.period === formPeriod);
+    const defaultItem = activeTimetable.find((t) => t.period === formPeriod);
     const origSub = defaultItem ? defaultItem[formDay].subject : '';
     setFormOrig(origSub);
     setIsModalOpen(true);
@@ -132,7 +138,7 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
 
   const handlePeriodChange = (period: number) => {
     setFormPeriod(period);
-    const item = timetableData.find((t) => t.period === period);
+    const item = activeTimetable.find((t) => t.period === period);
     if (item) {
       setFormOrig(item[formDay].subject);
     }
@@ -140,7 +146,7 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
 
   const handleDaySelectInForm = (day: DayKey) => {
     setFormDay(day);
-    const item = timetableData.find((t) => t.period === formPeriod);
+    const item = activeTimetable.find((t) => t.period === formPeriod);
     if (item) {
       setFormOrig(item[day].subject);
     }
@@ -173,8 +179,18 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
     return changes.find((c) => c.day === day && c.period === period);
   };
 
-  // Get active day list (with dates if available from weekInfo)
-  const daysList = weekInfo?.days || DEFAULT_DAYS.map((d) => ({ key: d.key, label: d.label, isToday: false }));
+  // Get active day list
+  const daysList =
+    viewMode === 'realtime' && weekInfo?.days
+      ? weekInfo.days
+      : DEFAULT_DAYS.map((d) => ({ key: d.key, label: d.label, isToday: false }));
+
+  // Check if selected day in realtime mode is entirely a holiday
+  const selectedDayItems = activeTimetable.map((t) => t[selectedDay]);
+  const isSelectedDayHoliday =
+    viewMode === 'realtime' &&
+    selectedDayItems.slice(0, 4).every((item) => item?.isEvent || item?.subject?.includes('공휴일') || item?.subject?.includes('한글날'));
+  const holidayName = selectedDayItems[0]?.subject || '공휴일';
 
   return (
     <div className="clay-card bg-white/90 dark:bg-slate-900/90 p-5 md:p-6 transition-all duration-300">
@@ -189,22 +205,23 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                 학급 시간표 & 변동 관리
               </h2>
-              {/* NEIS Realtime Indicator Badge */}
-              {isNeisLive ? (
+              {/* Mode Badge */}
+              {viewMode === 'realtime' && isNeisLive ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-sm animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-500" />
                   나이스(NEIS) 실시간 연동됨
                 </span>
               ) : (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-normal">
-                  주간 정규 35시수
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <BookOpen className="w-3 h-3 text-indigo-500" />
+                  3-7 정규 35시수 기준표
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
               <span>순천복성고 {classSettings?.grade || 3}학년 {classSettings?.classNum || 7}반 공식 시간표</span>
-              {lastSyncTime && (
+              {viewMode === 'realtime' && lastSyncTime && (
                 <span className="text-[11px] text-slate-400 dark:text-slate-500">
                   (최근 동기화: {lastSyncTime})
                 </span>
@@ -213,67 +230,132 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: Refresh & Add Change */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => fetchTimetable(weekOffset)}
-            disabled={isLoadingNeis}
-            title="나이스 실시간 시간표 다시 불러오기"
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNeis ? 'animate-spin text-indigo-500' : ''}`} />
-            <span className="hidden sm:inline">실시간 갱신</span>
-          </button>
+        {/* Action Controls: View Mode Toggle & Add Change */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs">
+            <button
+              onClick={() => setViewMode('realtime')}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                viewMode === 'realtime'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-emerald-500" />
+              <span>실시간 나이스</span>
+            </button>
+            <button
+              onClick={() => setViewMode('regular')}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                viewMode === 'regular'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+              <span>정규 기준표</span>
+            </button>
+          </div>
+
+          {viewMode === 'realtime' && (
+            <button
+              onClick={() => fetchTimetable(weekOffset)}
+              disabled={isLoadingNeis}
+              title="나이스 실시간 시간표 다시 불러오기"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNeis ? 'animate-spin text-indigo-500' : ''}`} />
+              <span className="hidden sm:inline">실시간 갱신</span>
+            </button>
+          )}
 
           <button
             onClick={handleOpenModal}
-            className="px-3.5 py-2 rounded-2xl clay-button bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium text-xs md:text-sm flex items-center gap-1.5 shadow-md shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98]"
+            className="px-3 py-1.5 rounded-xl clay-button bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium text-xs flex items-center gap-1 shadow-md shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4" /> 시간표 변경 등록
+            <Plus className="w-3.5 h-3.5" /> 시간표 변경 등록
           </button>
         </div>
       </div>
 
-      {/* Week Navigation Toolbar */}
-      <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 mb-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => handleWeekChange(weekOffset - 1)}
-            disabled={isLoadingNeis}
-            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-            title="이전 주"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="font-bold text-slate-700 dark:text-slate-200 px-1">
-            {weekInfo?.label || '이번 주 시간표'}
-          </span>
-          <button
-            onClick={() => handleWeekChange(weekOffset + 1)}
-            disabled={isLoadingNeis}
-            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-            title="다음 주"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {weekOffset !== 0 ? (
+      {/* Mode Specific Toolbar */}
+      {viewMode === 'realtime' ? (
+        /* Week Navigation Toolbar */
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 mb-4 text-xs">
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => handleWeekChange(0)}
-              className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-indigo-100 transition-colors"
+              onClick={() => handleWeekChange(weekOffset - 1)}
+              disabled={isLoadingNeis}
+              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+              title="이전 주"
             >
-              오늘(이번 주)로 이동
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          ) : (
-            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-medium text-[11px] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              이번 주 진행 중
+            <span className="font-bold text-slate-700 dark:text-slate-200 px-1">
+              {weekInfo?.label || '이번 주 시간표'}
             </span>
-          )}
+            <button
+              onClick={() => handleWeekChange(weekOffset + 1)}
+              disabled={isLoadingNeis}
+              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+              title="다음 주"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {weekOffset !== 0 ? (
+              <button
+                onClick={() => handleWeekChange(0)}
+                className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-indigo-100 transition-colors"
+              >
+                오늘(이번 주)로 이동
+              </button>
+            ) : (
+              <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-medium text-[11px] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                이번 주 진행 중
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Regular Timetable Info Toolbar */
+        <div className="mb-4 p-2.5 px-3.5 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-indigo-900 dark:text-indigo-200">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span>
+              <strong>순천복성고 3학년 7반 2학기 정규 35시수 기준 시간표</strong> (공휴일과 무관한 평소 정규 수업 과목)
+            </span>
+          </div>
+          <button
+            onClick={() => setViewMode('realtime')}
+            className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 shrink-0 self-start sm:self-auto"
+          >
+            이번 주 실시간 나이스로 전환 ➜
+          </button>
+        </div>
+      )}
+
+      {/* Holiday Alert Banner (if selected day is a holiday in realtime mode) */}
+      {isSelectedDayHoliday && (
+        <div className="mb-4 p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2 text-purple-900 dark:text-purple-200">
+            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span>
+              <strong>{daysList.find((d) => d.key === selectedDay)?.label}</strong>은 법정 공휴일(<strong>{holidayName}</strong>)로 정규 수업이 없는 날입니다.
+            </span>
+          </div>
+          <button
+            onClick={() => setViewMode('regular')}
+            className="px-2.5 py-1 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-all text-[11px] shrink-0 self-start sm:self-auto shadow-sm"
+          >
+            3-7 평소 정규 시간표 확인 ➜
+          </button>
+        </div>
+      )}
 
       {/* Day Selector Pills */}
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 mb-5 overflow-x-auto">
@@ -306,7 +388,7 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
 
       {/* Timetable Cards for Selected Day */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-5">
-        {timetableData.map((item) => {
+        {activeTimetable.map((item) => {
           const classInfo = item[selectedDay];
           const substitution = getSubstitutedClass(selectedDay, item.period);
           const isSpecialEvent = classInfo?.isEvent;
@@ -337,7 +419,7 @@ export const TimetableSection: React.FC<TimetableSectionProps> = ({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300">
                     🎌 학사일정/공휴일
                   </span>
-                ) : classInfo?.isNeis ? (
+                ) : viewMode === 'realtime' && classInfo?.isNeis ? (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-0.5 border border-emerald-200 dark:border-emerald-800">
                     <Zap className="w-2.5 h-2.5 text-emerald-500 fill-emerald-500" /> 나이스
                   </span>

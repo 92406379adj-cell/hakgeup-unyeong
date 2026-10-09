@@ -147,6 +147,29 @@ export async function GET(request: Request) {
 
     // 4. Overlay NEIS live subjects onto the timetable
     dayResults.forEach(({ dayKey, rows }: { dayKey: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'; rows: any[] }) => {
+      // Check if this day is a full-day holiday
+      const isFullDayHoliday =
+        rows.length > 0 &&
+        rows.every((r: any) => {
+          const s = (r.ITRT_CNTNT || '').trim();
+          return s.includes('공휴일') || s.includes('한글날') || s.includes('개천절') || s.includes('현충일') || s.includes('휴업');
+        });
+
+      if (isFullDayHoliday) {
+        const holidayName = (rows[0]?.ITRT_CNTNT || '공휴일').trim();
+        totalNeisRows += 7;
+        timetableData.forEach((tableItem) => {
+          tableItem[dayKey] = {
+            subject: holidayName,
+            teacher: '공휴일',
+            room: '-',
+            isNeis: true,
+            isEvent: true,
+          };
+        });
+        return;
+      }
+
       rows.forEach((row: any) => {
         const periodNum = parseInt(row.PERIO, 10);
         const subjectName = (row.ITRT_CNTNT || '').trim();
